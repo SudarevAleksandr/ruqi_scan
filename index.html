@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ruqi scan service</title>
+    <style>
+      body,
+      html {
+        min-height: 100%;
+        padding: 0;
+        margin: 0;
+        color: white;
+        font-size: 19px;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      body {
+        background: #221f2e;
+        background: linear-gradient(217deg, #221f2e, #1a1431 70.71%), linear-gradient(127deg, #1c1928, #221f2e 70.71%),
+          linear-gradient(336deg, #37334f, #221f2e 70.71%) no-repeat;
+      }
+      .container {
+        padding: 25px 35px;
+      }
+      .title {
+        font-size: 48px;
+        font-weight: 900;
+        line-height: 35px;
+        margin-bottom: 24px;
+      }
+      .title img {
+        margin-bottom: -3px;
+      }
+      .table_header,
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 30px;
+      }
+      .row {
+        background: #2e2b3f;
+        margin-bottom: 10px;
+        border-radius: 10px;
+      }
+      .row_title {
+        font-size: 12px;
+        color: #878787;
+        margin-bottom: 4px;
+        display: none;
+      }
+      .right_column {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .row img {
+        display: block;
+        width: 22px;
+        height: 22px;
+      }
+      .red {
+        color: #ff4476;
+      }
+      .table_header {
+        color: rgb(172, 172, 172);
+        font-size: 16px;
+      }
+      .url {
+        width: 300px;
+      }
+      .status {
+        width: 70px;
+      }
+      .code {
+        width: 70px;
+      }
+      .time {
+        width: 90px;
+      }
+      .data {
+        min-height: 22px;
+      }
+      #row_wrap {
+        margin-bottom: 36px;
+      }
+      .descriptions {
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 16px;
+        color: #acacac;
+      }
+      @media (max-width: 720px) {
+        .container {
+          padding: 12px 16px;
+        }
+      }
+      @media (max-width: 669px) {
+        .table_header {
+          display: none;
+        }
+        .row_title {
+          display: block;
+        }
+        .table_header,
+        .row,
+        .right_column {
+          flex-wrap: wrap;
+        }
+      }
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid;
+        border-color: #434052;
+        border-right-color: #7961f1;
+        animation: spinner 1.2s infinite linear;
+      }
+
+      @keyframes spinner {
+        to {
+          transform: rotate(1turn);
+        }
+      }
+    </style>
+    <script>
+      function fetch(url, callBack, method = 'GET', timeout = 5000) {
+        var xhr = new XMLHttpRequest();
+        xhr.open(method, url);
+        xhr.timeout = timeout;
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onload = function (e) {
+          if (xhr.status != 200) {
+            callBack('error', xhr.status);
+            return;
+          }
+          callBack('ok', xhr.status);
+        };
+        xhr.ontimeout = function (e) {
+          callBack('timeout', xhr.status);
+        };
+        xhr.onerror = function (e) {
+          callBack('error', xhr.status);
+        };
+        xhr.send();
+      }
+      var urls = [
+        { id: 'work', url: 'https://work.ruqi.ru/' },
+        { id: 'lk', url: 'https://lk.ruqi.ru/' },
+        { id: 'api', url: 'https://api.stage2.ruqi.ru' },
+        { id: 'stage2', url: 'https://stage2.ruqi.ru' },
+        { id: 'requisitor', url: 'https://requisitor.ruqi.ru/' },
+      ];
+
+      function getCurrentDateTime() {
+        var now = new Date();
+
+        var day = String(now.getDate()).padStart(2, '0');
+        var month = String(now.getMonth() + 1).padStart(2, '0');
+        var year = now.getFullYear();
+
+        var hours = String(now.getHours()).padStart(2, '0');
+        var minutes = String(now.getMinutes()).padStart(2, '0');
+        var seconds = String(now.getSeconds()).padStart(2, '0');
+
+        return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+      }
+
+      function getDisplayedNumber(value, toFixed) {
+        if (typeof value !== 'number' && typeof value !== 'string') return value;
+        const parts = ('' + value).split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        if (toFixed && parts[1]) parts[1] = parts[1].slice(0, toFixed);
+        return parts.join(',');
+      }
+
+      function innerRow(item) {
+        var template = document.getElementById('template-element');
+        if (!template) return;
+        var clone = document.importNode(template.content, true);
+        var rootElement = clone.firstElementChild;
+        if (!rootElement) return;
+        rootElement.id = item.id;
+        var urlDiv = rootElement.getElementsByClassName('url_data');
+        if (urlDiv[0]) urlDiv[0].innerHTML = item.url;
+        var tableDiv = document.getElementById('row_wrap');
+        if (tableDiv) tableDiv.appendChild(clone);
+      }
+      var timingLog = {};
+
+      function innerResult(id) {
+        return function (status, code, time) {
+          var div = document.getElementById(id);
+          timingLog[id].end = Date.now();
+          var diff = Date.now() - timingLog[id].start;
+          var diffTime = getDisplayedNumber(diff);
+          var statusDiv = div.getElementsByClassName('status_data');
+          if (statusDiv[0]) statusDiv[0].innerHTML = getStatusElement(status);
+          var codeDiv = div.getElementsByClassName('code_data');
+          if (codeDiv[0]) codeDiv[0].innerHTML = code;
+          var timeDiv = div.getElementsByClassName('time_data');
+          if (timeDiv[0]) timeDiv[0].innerHTML = diffTime;
+        };
+      }
+
+      function getStatusElement(status) {
+        if (status === 'error') return '<img src="img/cross.svg" />';
+        if (status === 'ok') return '<img src="img/check.svg" />';
+        if (status === 'timeout') return '<span class="red">timeout</span';
+      }
+
+      window.onload = function () {
+        var userAgent = navigator.userAgent;
+        document.getElementById('userAgent').textContent = navigator.userAgent || 'User agent not supported';
+        document.getElementById('dateTime').textContent = getCurrentDateTime();
+        for (var i = 0; i < urls.length; i++) {
+          innerRow(urls[i]);
+        }
+        for (var i = 0; i < urls.length; i++) {
+          timingLog[urls[i].id] = { start: Date.now() };
+          fetch(urls[i].url, innerResult(urls[i].id));
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <template id="template-element">
+      <div class="row">
+        <div class="url">
+          <div class="data url_data"></div>
+        </div>
+        <div class="right_column">
+          <div class="status">
+            <div class="row_title">Status</div>
+            <div class="data status_data">
+              <div class="spinner"></div>
+            </div>
+          </div>
+          <div class="code">
+            <div class="row_title">Code</div>
+            <div class="data code_data"></div>
+          </div>
+          <div class="time">
+            <div class="row_title">Time</div>
+            <div class="data time_data"></div>
+          </div>
+        </div>
+      </div>
+    </template>
+    <div class="container">
+      <div class="title">
+        <img src="img/logo.svg" />
+        Ruqi scan
+      </div>
+
+      <div class="table_header">
+        <div class="url">Url</div>
+        <div class="status">Status</div>
+        <div class="code">Code</div>
+        <div class="time">Time</div>
+      </div>
+      <div id="row_wrap"></div>
+
+      <div class="descriptions">
+        <div id="dateTime"></div>
+        <div id="userAgent"></div>
+      </div>
+    </div>
+  </body>
+</html>
