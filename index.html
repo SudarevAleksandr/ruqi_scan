@@ -25,7 +25,7 @@
       .title {
         font-size: 48px;
         font-weight: 900;
-        line-height: 35px;
+        line-height: 40px;
         margin-bottom: 24px;
       }
       .title img {
@@ -36,11 +36,11 @@
         display: flex;
         align-items: center;
         gap: 16px;
-        padding: 10px 30px;
+        padding: 10px 19px;
       }
       .row {
         background: #2e2b3f;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
         border-radius: 10px;
       }
       .row_title {
@@ -63,8 +63,8 @@
         color: #ff4476;
       }
       .table_header {
-        color: rgb(172, 172, 172);
-        font-size: 16px;
+        color: #544a63;
+        font-size: 12px;
       }
       .url {
         width: 300px;
@@ -88,7 +88,7 @@
         margin-bottom: 24px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 16px;
         font-size: 16px;
         color: #acacac;
       }
@@ -127,6 +127,14 @@
       }
     </style>
     <script>
+      var urls = [
+        { id: 'work', url: 'https://work.ruqi.ru/' },
+        { id: 'lk', url: 'https://lk.ruqi.ru/' },
+        { id: 'api', url: 'https://api.stage2.ruqi.ru' },
+        { id: 'stage2', url: 'https://stage2.ruqi.ru' },
+        { id: 'requisitor', url: 'https://requisitor.ruqi.ru/' },
+      ];
+
       function fetch(url, callBack, method = 'GET', timeout = 5000) {
         var xhr = new XMLHttpRequest();
         xhr.open(method, url);
@@ -147,13 +155,6 @@
         };
         xhr.send();
       }
-      var urls = [
-        { id: 'work', url: 'https://work.ruqi.ru/' },
-        { id: 'lk', url: 'https://lk.ruqi.ru/' },
-        { id: 'api', url: 'https://api.stage2.ruqi.ru' },
-        { id: 'stage2', url: 'https://stage2.ruqi.ru' },
-        { id: 'requisitor', url: 'https://requisitor.ruqi.ru/' },
-      ];
 
       function getCurrentDateTime() {
         var now = new Date();
